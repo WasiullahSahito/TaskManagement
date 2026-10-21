@@ -39,6 +39,7 @@ async function request(path, options = {}) {
   if (response.redirected) {
     throw new Error("The API redirected this request. Make the API deployment publicly accessible in Vercel Deployment Protection settings.");
   }
+  if (response.status === 204) return null;
   if (!response.headers.get("content-type")?.includes("application/json")) {
     throw new Error("The API returned an unexpected response. Check that the Vercel API deployment is public and running correctly.");
   }
@@ -52,7 +53,6 @@ async function request(path, options = {}) {
     }
     throw error;
   }
-  if (response.status === 204) return null;
   return response.json();
 }
 
@@ -144,6 +144,7 @@ function App() {
       setTeams([]);
       setTasks([]);
       setModal(null);
+      setAuthMode("login");
       setError("Your session expired. Please sign in again.");
     };
     window.addEventListener("teamtasks:session-expired", handleSessionExpired);
@@ -193,7 +194,15 @@ function App() {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      const { user: authenticatedUser } = await request("/auth/me");
+      let authenticatedUser;
+      try {
+        ({ user: authenticatedUser } = await request("/auth/me"));
+      } catch (sessionError) {
+        if (sessionError.status === 401) {
+          throw new Error("Your credentials were accepted, but the server did not keep your session. Redeploy the API and frontend so the latest session-cookie changes are active.");
+        }
+        throw sessionError;
+      }
       setUser(authenticatedUser);
     } catch (authError) {
       setError(authError.message);

@@ -67,9 +67,9 @@ Vercel's [Hobby plan](https://vercel.com/docs/plans/hobby) is free for personal,
 ### 3. Deploy the Vite frontend to Vercel
 
 1. Create a second Vercel project from the same repository. Set **Root Directory** to `client`, use the **Vite** framework preset, build command `npm run build`, and output directory `dist`.
-2. In [`client/vercel.json`](./client/vercel.json), set the API rewrite destination to the actual public API deployment URL. This rewrite proxies `/api/*` to the API and the second rewrite provides SPA routing. Keep `/api` requests on the frontend origin so the HTTP-only session cookie works as a first-party cookie.
+2. In [`client/vercel.json`](./client/vercel.json), set the API rewrite destination to the API project's stable production domain, not a one-off deployment URL. This rewrite proxies `/api/*` to the API and the second rewrite provides SPA routing. Keep `/api` requests on the frontend origin so the HTTP-only session cookie works as a first-party cookie.
 3. Deploy the frontend, then update the API project's `CLIENT_ORIGIN` to the exact production frontend URL and redeploy the API.
-4. Verify registration/login, create a team and task, refresh the page, sign out, and sign back in.
+4. Whenever changing API or frontend code, redeploy both projects. Verify registration/login, create a team and task, refresh the page, sign out, and sign back in. A successful login must set the `teamtasks.sid` cookie; if `/api/auth/me` still returns 401 immediately after login, verify the API rewrite points to the current production API domain and that both projects use the latest deployment.
 
 ### 4. Preview deployments and connection limits
 

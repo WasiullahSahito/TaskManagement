@@ -59,6 +59,16 @@ const validate = (req, res, next) => {
   return next();
 };
 
+function establishSession(req, res, next, user, status = 200) {
+  req.login(user, (loginError) => {
+    if (loginError) return next(loginError);
+    req.session.save((saveError) => {
+      if (saveError) return next(saveError);
+      return res.status(status).json({ user });
+    });
+  });
+}
+
 const cleanText = (field, max, optional = false) => {
   const validator = body(field)
     .trim()
@@ -87,10 +97,7 @@ app.post(
         "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email",
         [name, email, passwordHash],
       );
-      req.login(result.rows[0], (error) => {
-        if (error) return next(error);
-        return res.status(201).json({ user: result.rows[0] });
-      });
+      return establishSession(req, res, next, result.rows[0], 201);
     } catch (error) {
       if (error.code === "23505") {
         return res.status(409).json({ error: "An account with this email already exists." });
@@ -109,10 +116,7 @@ app.post(
     passport.authenticate("local", (error, user) => {
       if (error) return next(error);
       if (!user) return res.status(401).json({ error: "Email or password is incorrect." });
-      return req.login(user, (loginError) => {
-        if (loginError) return next(loginError);
-        return res.json({ user });
-      });
+      return establishSession(req, res, next, user);
     })(req, res, next);
   },
 );
