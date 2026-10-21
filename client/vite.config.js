@@ -5,7 +5,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "http://localhost:3000",
+      "/api": {
+        target:
+          "https://task-management-git-main-wasi1237585-gmailcoms-projects.vercel.app",
+        changeOrigin: true,
+        secure: true,
+      },
     },
   },
 });

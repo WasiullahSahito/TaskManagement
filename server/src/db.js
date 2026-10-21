@@ -7,9 +7,15 @@ dotenv.config({ path: fileURLToPath(new URL("../../.env", import.meta.url)) });
 
 const { Pool } = pg;
 const schemaPath = fileURLToPath(new URL("../schema.sql", import.meta.url));
+const maxConnections = Number(process.env.PG_POOL_MAX || 3);
+
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is required for PostgreSQL data storage.");
+}
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: maxConnections,
 });
 
 export async function initializeDatabase() {

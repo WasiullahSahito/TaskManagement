@@ -6,15 +6,16 @@ import session from "express-session";
 import { body, param, query as queryValidator, validationResult } from "express-validator";
 import helmet from "helmet";
 import path from "node:path";
+import { existsSync } from "node:fs";
 import passport from "passport";
 import { fileURLToPath } from "node:url";
 import { initializeDatabase, pool, query, withTransaction } from "./db.js";
 import { requireAuth, requireTaskTeamMember, requireTeamMember } from "./auth.js";
 
 const app = express();
-const port = Number(process.env.PORT || 3000);
 const production = process.env.NODE_ENV === "production";
 const clientDist = fileURLToPath(new URL("../../client/dist/", import.meta.url));
+const clientEntry = path.join(clientDist, "index.html");
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is required for PostgreSQL data storage.");
@@ -407,13 +408,15 @@ app.delete(
   },
 );
 
-app.use(express.static(clientDist));
-app.use("/api", (req, res) => res.status(404).json({ error: "API route not found." }));
-app.get("*", (req, res, next) => {
-  res.sendFile(path.join(clientDist, "index.html"), (error) => {
-    if (error) next();
+if (existsSync(clientEntry)) {
+  app.use(express.static(clientDist));
+  app.get("*", (req, res, next) => {
+    res.sendFile(clientEntry, (error) => {
+      if (error) next();
+    });
   });
-});
+}
+app.use("/api", (req, res) => res.status(404).json({ error: "API route not found." }));
 app.use((error, req, res, next) => {
   console.error(error);
   if (res.headersSent) return next(error);
@@ -421,7 +424,5 @@ app.use((error, req, res, next) => {
 });
 
 await initializeDatabase();
-app.listen(port, () => {
-  console.log(`Team Task Manager API listening on port ${port}`);
-  if (!production) console.warn("Using in-memory sessions for development; sessions will not survive a restart.");
-});
+
+export default app;

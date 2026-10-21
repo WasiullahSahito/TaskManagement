@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/index.js",
-    "start": "node src/index.js"
+    "dev": "node --watch start.js",
+    "start": "node start.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
