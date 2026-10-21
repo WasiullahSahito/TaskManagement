@@ -144,10 +144,9 @@ button:disabled { cursor: not-allowed; opacity: .65; }
 .status-in_progress { color: #6186ce; background: #edf3ff; }
 .status-done { color: #54a386; background: #eaf7f1; }
 .task-actions { position: relative; display: flex; justify-content: flex-end; }
-.task-actions > button { display: grid; place-items: center; width: 23px; height: 25px; border: 0; border-radius: 5px; background: transparent; color: #a6a4b1; }
-.task-actions > button:hover { color: #7059e8; background: #f1efff; }
-.task-action-menu { display: none; position: absolute; top: 24px; right: 0; z-index: 4; min-width: 110px; padding: 4px; border: 1px solid #eeedf3; border-radius: 7px; background: #fff; box-shadow: 0 8px 24px #24203a18; }
-.task-actions:focus-within .task-action-menu { display: block; }
+.task-menu-trigger { display: grid; place-items: center; width: 23px; height: 25px; border: 0; border-radius: 5px; background: transparent; color: #a6a4b1; }
+.task-menu-trigger:hover, .task-menu-trigger[aria-expanded="true"] { color: #7059e8; background: #f1efff; }
+.task-action-menu { position: absolute; top: 24px; right: 0; z-index: 4; min-width: 110px; padding: 4px; border: 1px solid #eeedf3; border-radius: 7px; background: #fff; box-shadow: 0 8px 24px #24203a18; }
 .task-action-menu button { display: block; width: 100%; padding: 7px 8px; border: 0; border-radius: 4px; background: transparent; color: #686679; text-align: left; font-size: 9px; }
 .task-action-menu button:hover { background: #f5f3ff; }
 .task-action-menu .delete-action:hover { color: #d44e56; background: #fff2f1; }

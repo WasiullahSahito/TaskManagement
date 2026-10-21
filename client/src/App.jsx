@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownUp,
   ArrowRight,
@@ -36,10 +36,20 @@ async function request(path, options = {}) {
       ...options.headers,
     },
   });
+  if (response.redirected) {
+    throw new Error("The API redirected this request. Make the API deployment publicly accessible in Vercel Deployment Protection settings.");
+  }
+  if (!response.headers.get("content-type")?.includes("application/json")) {
+    throw new Error("The API returned an unexpected response. Check that the Vercel API deployment is public and running correctly.");
+  }
   if (!response.ok) {
-    const result = await response.json().catch(() => ({}));
+    const result = await response.json();
     const error = new Error(result.error || "Something went wrong. Please try again.");
     error.status = response.status;
+    if (response.status === 401 && !path.startsWith("/auth/")) {
+      error.message = "Your session expired. Please sign in again.";
+      window.dispatchEvent(new Event("teamtasks:session-expired"));
+    }
     throw error;
   }
   if (response.status === 204) return null;
@@ -129,6 +139,18 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const handleSessionExpired = () => {
+      setUser(null);
+      setTeams([]);
+      setTasks([]);
+      setModal(null);
+      setError("Your session expired. Please sign in again.");
+    };
+    window.addEventListener("teamtasks:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("teamtasks:session-expired", handleSessionExpired);
+  }, []);
+
+  useEffect(() => {
     if (user) loadData().catch((loadError) => setError(loadError.message));
   }, [user, loadData]);
 
@@ -167,11 +189,12 @@ function App() {
     const form = new FormData(event.currentTarget);
     const payload = Object.fromEntries(form.entries());
     try {
-      const result = await request(`/auth/${authMode === "login" ? "login" : "register"}`, {
+      await request(`/auth/${authMode === "login" ? "login" : "register"}`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      setUser(result.user);
+      const { user: authenticatedUser } = await request("/auth/me");
+      setUser(authenticatedUser);
     } catch (authError) {
       setError(authError.message);
     } finally {
@@ -544,6 +567,25 @@ function StatCard({ label, value, icon, tint, note }) {
 }
 
 function TaskRow({ task, onEdit, onDelete, onStatus }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const actionsRef = useRef(null);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const closeOnOutsideClick = (event) => {
+      if (!actionsRef.current?.contains(event.target)) setMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen]);
+
   return (
     <article className="task-row">
       <div className="task-name-cell">
@@ -555,7 +597,22 @@ function TaskRow({ task, onEdit, onDelete, onStatus }) {
       <span className={`task-due-cell ${isOverdue(task.due_date) && task.status !== "done" ? "overdue" : ""}`}>{task.due_date ? <><Clock3 size={13} />{formatDate(task.due_date)}</> : <span className="no-date">No date</span>}</span>
       <span><span className={`priority-pill priority-${task.priority}`}><i />{task.priority}</span></span>
       <span><button className={`status-pill status-${task.status}`} onClick={() => onStatus(task.status === "todo" ? "in_progress" : task.status === "in_progress" ? "done" : "todo")} title="Click to move to the next status">{task.status === "in_progress" ? "In progress" : task.status === "done" ? "Done" : "To do"}</button></span>
-      <div className="task-actions"><button onClick={onEdit} aria-label="Edit task"><MoreHorizontal size={17} /></button><div className="task-action-menu"><button onClick={onEdit}>Edit task</button><button className="delete-action" onClick={onDelete}>Delete task</button></div></div>
+      <div className={`task-actions ${menuOpen ? "task-actions-open" : ""}`} ref={actionsRef}>
+        <button
+          type="button"
+          className="task-menu-trigger"
+          aria-label={`More actions for ${task.title}`}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <MoreHorizontal size={17} />
+        </button>
+        {menuOpen && <div className="task-action-menu" role="menu">
+          <button role="menuitem" onClick={() => { setMenuOpen(false); onEdit(); }}>Edit task</button>
+          <button role="menuitem" className="delete-action" onClick={() => { setMenuOpen(false); onDelete(); }}>Delete task</button>
+        </div>}
+      </div>
     </article>
   );
 }
