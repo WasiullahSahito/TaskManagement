@@ -13,7 +13,7 @@ import { initializeDatabase, pool, query, withTransaction } from "./db.js";
 import { requireAuth, requireTaskTeamMember, requireTeamMember } from "./auth.js";
 
 const app = express();
-const production = process.env.NODE_ENV === "production";
+const production = process.env.NODE_ENV === "production" || Boolean(process.env.VERCEL);
 const clientDist = fileURLToPath(new URL("../../client/dist/", import.meta.url));
 const clientEntry = path.join(clientDist, "index.html");
 
