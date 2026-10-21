@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://task-management-git-main-wasi1237585-gmailcoms-projects.vercel.app/api/:path*"
+      "destination": "https://task-management-gk4jy1miu-wasi1237585-gmailcoms-projects.vercel.app/api/:path*"
     },
     {
       "source": "/(.*)",

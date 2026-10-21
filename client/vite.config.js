@@ -7,7 +7,7 @@ export default defineConfig({
     proxy: {
       "/api": {
         target:
-          "https://task-management-git-main-wasi1237585-gmailcoms-projects.vercel.app",
+          "https://task-management-gk4jy1miu-wasi1237585-gmailcoms-projects.vercel.app",
         changeOrigin: true,
         secure: true,
       },
